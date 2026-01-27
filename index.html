@@ -1,212 +1,201 @@
-<meta name='viewport' content='width=device-width, initial-scale=1'/><!DOCTYPE html><html lang="hi">
+<!DOCTYPE html>
+<html lang="hi">
 <head>
-  <meta charset="UTF-8">
-  <meta name='viewport' content='width=device-width, initial-scale=1'/>
-  <title>हिंदी एआई सहायक</title>
-  <style>
-    body {
-      font-family: 'Noto Sans Devanagari', sans-serif;
-      background-color: #f8f9fa;
-      text-align: center;
-      padding: 40px;
-      color: #212529;
-    }
-    button {
-      font-size: 18px;
-      padding: 12px 24px;
-      border: none;
-      border-radius: 8px;
-      background-color: #007bff;
-      color: white;
-      cursor: pointer;
-    }
-    #micStatus {
-      margin-top: 10px;
-      font-weight: bold;
-      color: green;
-    }
-  </style>
+<meta charset="UTF-8">
+<title>24x7 YouTube Playlist Player</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+body {
+  margin:0;
+  font-family: Arial, sans-serif;
+  background:#000;
+  color:#fff;
+}
+header {
+  background:#111;
+  padding:10px;
+  text-align:center;
+  font-size:20px;
+}
+.container {
+  padding:10px;
+}
+
+/* Controls */
+.controls {
+  display:flex;
+  gap:10px;
+  flex-wrap:wrap;
+  margin-bottom:10px;
+}
+.controls input {
+  flex:1;
+  padding:8px;
+  font-size:16px;
+}
+.controls button {
+  padding:8px 12px;
+  font-size:16px;
+  cursor:pointer;
+}
+
+/* Player */
+#playerBox {
+  width:100%;
+  height:320px;
+  background:#000;
+  margin-bottom:10px;
+}
+#player iframe {
+  width:100%;
+  height:100%;
+}
+
+/* Playlist */
+#playlistBox {
+  padding:10px;
+}
+#playlistHeader {
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  margin-bottom:5px;
+}
+#playlist {
+  display:grid;
+  grid-template-columns:repeat(auto-fill,minmax(150px,1fr));
+  gap:10px;
+  max-height:300px;
+  overflow-y:auto;
+}
+.videoItem {
+  cursor:pointer;
+  text-align:center;
+  background:#181818;
+  padding:5px;
+  border:1px solid #333;
+}
+.videoItem img {
+  width:100%;
+}
+.hide {
+  display:none !important;
+}
+</style>
 </head>
 <body>
-  <h2>🎤 माइक से हिंदी में सवाल पूछिए</h2>
-  <button onclick="startIntro()">🎙️ माइक चालू करें</button>
-  <p id="micStatus"></p>
-  <p><strong>आपका सवाल:</strong> <span id="question">---</span></p>
-  <p><strong>उत्तर:</strong> <span id="answer">---</span></p>
-  <audio id="bgMusic" src="https://cdn.pixabay.com/audio/2022/03/28/audio_365b799070.mp3" preload="auto" loop autoplay></audio>  <script>
-    const data = [
-      {
-        prashn: "भारत की राजधानी क्या है ?",
-        uttar: "भारत की राजधानी नई दिल्ली है।",
-        keywords: ["भारत", "राजधानी", "नई", "दिल्ली"],
-        focus: "राजधानी",
-        details: "नई दिल्ली भारत की राजधानी है..."
-      },
-      {
-        prashn: "भारत का राष्ट्रीय पशु कौन है ?",
-        uttar: "भारत का राष्ट्रीय पशु बाघ है।",
-        keywords: ["राष्ट्रीय", "पशु", "बाघ", "टाइगर"],
-        focus: "पशु",
-        details: "भारत का राष्ट्रीय पशु बाघ है..."
-      }
-      // अन्य प्रश्न भी जैसे आपने पहले डाले थे वैसे ही रखें
-    ];
 
-    const vagueWords = ["वो", "उसका", "उसके", "पहले", "बताओ", "कौन", "नाम", "कुछ", "थोड़ा", "क्या", "ऐसा", "उस", "इस", "कैसा", "कहीं", "कभी", "उसे", "जैसा", "इसे", "उनका", "इसका", "कहिए", "बताना", "बताइए"];
+<header>📺 24x7 YouTube Playlist Player</header>
 
-    const detailWords = ["डिटेल", "details", "विस्तार", "aur", "और", "समझाओ", "पूरा", "खुलकर", "गहराई", "व्याख्या", "explain", "ज्यादा", "detail", "जानकारी", "सबकुछ", "कृपया विस्तार", "संपूर्ण", "कहानी", "इतिहास", "कैसे", "step", "process", "example", "method", "overview"];
+<div class="container">
 
-    const historyWords = ["पिछले", "पुराने", "12", "सवाल", "किए", "क्या पूछा", "दिखाओ", "अब तक", "history", "record", "पहले पूछे", "यूज़र ने", "मुझे", "लास्ट", "recent", "अभी तक", "बीते", "उदाहरण", "list", "सारी बातचीत", "पुराना जवाब", "बातचीत", "पुरानी बातें", "conversation", "logs"];
+  <!-- Controls -->
+  <div class="controls">
+    <input id="url" placeholder="YouTube video link paste करें">
+    <button onclick="addVideo()">Add Video</button>
+    <button onclick="playAll()">▶ Play All</button>
+    <button onclick="togglePlaylist()">Hide / Show Playlist</button>
+  </div>
 
-    let last12Questions = [];
-    let lastAnswerObj = null;
-    const music = document.getElementById("bgMusic");
+  <!-- Video Player -->
+  <div id="playerBox">
+    <div id="player"></div>
+  </div>
 
-    function contains(words, inputWords) {
-      return inputWords.some(word => words.includes(word));
+  <!-- Playlist -->
+  <div id="playlistBox">
+    <div id="playlistHeader">
+      <h3>📂 Playlist</h3>
+    </div>
+    <div id="playlist"></div>
+  </div>
+
+</div>
+
+<script src="https://www.youtube.com/iframe_api"></script>
+<script>
+let videos = [];
+let current = 0;
+let player;
+
+// YouTube ID Extractor
+function getID(url){
+  const reg = /(?:youtube\.com\/(?:watch\?v=|shorts\/|embed\/)|youtu\.be\/)([a-zA-Z0-9_-]{11})/;
+  const m = url.match(reg);
+  return m ? m[1] : null;
+}
+
+// Add Video to Playlist
+function addVideo(){
+  const input = document.getElementById('url');
+  const id = getID(input.value);
+  if(!id){
+    alert("Invalid YouTube URL");
+    return;
+  }
+  videos.push(id);
+  input.value='';
+  renderPlaylist();
+}
+
+// Render Playlist Thumbnails
+function renderPlaylist(){
+  const container = document.getElementById('playlist');
+  container.innerHTML='';
+  videos.forEach((id,i)=>{
+    const div = document.createElement('div');
+    div.className='videoItem';
+    div.innerHTML=`<img src="https://img.youtube.com/vi/${id}/mqdefault.jpg"><div>Video ${i+1}</div>`;
+    div.onclick=()=>{playVideo(i)};
+    container.appendChild(div);
+  });
+}
+
+// Play Single Video
+function playVideo(index){
+  current=index;
+  if(player) player.loadVideoById(videos[current]);
+}
+
+// Play All Playlist
+function playAll(){
+  if(videos.length===0) return;
+  current=0;
+  player.loadVideoById(videos[current]);
+}
+
+// YouTube API Ready
+function onYouTubeIframeAPIReady(){
+  player = new YT.Player('player',{
+    height:'100%',
+    width:'100%',
+    playerVars:{
+      autoplay:0,       // Desktop: user must click Play All
+      controls:1,
+      rel:0,
+      modestbranding:1
+    },
+    events:{
+      onStateChange:onPlayerStateChange
     }
+  });
+}
 
-    function updateHistory(userQuestion, matchedData) {
-      if (last12Questions.length >= 12) last12Questions.shift();
-      last12Questions.push({ question: userQuestion, data: matchedData });
-    }
+// Auto Next Video
+function onPlayerStateChange(e){
+  if(e.data === YT.PlayerState.ENDED){
+    current++;
+    if(current>=videos.length) current=0; // loop 24x7
+    player.loadVideoById(videos[current]);
+  }
+}
 
-    function startIntro() {
-      const intro = "नमस्कार! मैं एक ह्यूमन एआई ब्रेन हूँ...";
-      speakAnswer(intro, () => {
-        startListening();
-      });
-    }
+// Hide / Show Playlist
+function togglePlaylist(){
+  const playlist = document.getElementById('playlist');
+  playlist.classList.toggle('hide');
+}
+</script>
 
-    function startListening() {
-      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-      if (!SpeechRecognition) {
-        alert("आपका ब्राउज़र माइक को सपोर्ट नहीं करता।");
-        return;
-      }
-
-      const recognition = new SpeechRecognition();
-      recognition.lang = 'hi-IN';
-      recognition.start();
-      document.getElementById("micStatus").innerText = "सुन रहा हूँ...";
-
-      const silenceTimeout = setTimeout(() => {
-        speakAnswer("कृपया आप अपना सवाल पूछें, हम इंतज़ार कर रहे हैं।", () => {
-          startListening();
-        });
-      }, 5000);
-
-      recognition.onresult = function(event) {
-        clearTimeout(silenceTimeout);
-        const userInput = event.results[0][0].transcript.trim();
-        document.getElementById("question").innerText = userInput;
-
-        const response = handleSpecialCases(userInput);
-        document.getElementById("answer").innerText = response;
-        speakAnswer(response, () => {
-          startListening();
-        });
-      };
-
-      recognition.onerror = function(event) {
-        alert("त्रुटि: " + event.error);
-        document.getElementById("micStatus").innerText = "";
-      };
-
-      recognition.onend = function() {
-        document.getElementById("micStatus").innerText = "";
-      };
-    }
-
-    function handleSpecialCases(input) {
-      const cleaned = input.replace(/[^ऀ-ॿ\s]/g, "").trim();
-      const inputWords = cleaned.split(/\s+/);
-
-      if (contains(historyWords, inputWords)) {
-        if (last12Questions.length === 0) return "अभी तक कोई सवाल नहीं पूछा गया है।";
-        const historyText = last12Questions.map((item, idx) => `${idx + 1}. ${item.question}`).join(" ");
-        return `आपने अब तक ये सवाल पूछे हैं: ${historyText}`;
-      }
-
-      if (contains(detailWords, inputWords)) {
-        if (lastAnswerObj && lastAnswerObj.details) {
-          return lastAnswerObj.details;
-        } else {
-          let relatedQs = last12Questions.filter(q => {
-            return lastAnswerObj && q.data.focus === lastAnswerObj.focus;
-          });
-
-          if (relatedQs.length > 0) {
-            let extraQs = relatedQs.map((q, i) => `${i + 1}. ${q.question}`).join(" ");
-            return `माफ कीजिए, इस विषय पर मेरे पास अभी विस्तृत जानकारी उपलब्ध नहीं है। लेकिन आपने हाल ही में इससे संबंधित ये सवाल पूछे हैं: ${extraQs}`;
-          } else {
-            return "माफ कीजिए, इस विषय पर मेरे पास अभी विस्तृत जानकारी उपलब्ध नहीं है।";
-          }
-        }
-      }
-
-      if (contains(vagueWords, inputWords)) {
-        return "कृपया थोड़ा और स्पष्ट बताएं।";
-      }
-
-      const matchedAnswer = findAnswer(input);
-      if (matchedAnswer) {
-        lastAnswerObj = matchedAnswer;
-        updateHistory(input, matchedAnswer);
-        return matchedAnswer.uttar;
-      }
-
-      return "माफ कीजिए, इसका उत्तर मेरे पास नहीं है।";
-    }
-
-    function findAnswer(input) {
-      const cleaned = input.replace(/[^ऀ-ॿ\s]/g, "").trim();
-      const inputWords = cleaned.split(/\s+/);
-
-      let bestMatch = null;
-      let highestScore = 0;
-
-      for (let item of data) {
-        let matchCount = 0;
-        item.keywords.forEach(k => {
-          if (inputWords.includes(k)) matchCount++;
-        });
-
-        if (inputWords.includes(item.focus) && matchCount >= 2) {
-          if (matchCount > highestScore) {
-            bestMatch = item;
-            highestScore = matchCount;
-          }
-        }
-      }
-
-      return bestMatch;
-    }
-
-    function speakAnswer(text, onComplete = null) {
-      if ('speechSynthesis' in window) {
-        const voices = window.speechSynthesis.getVoices();
-        const maleVoice = voices.find(voice => voice.lang.includes('hi-IN') && voice.name.includes('Google हिन्दी'));
-        const msg = new SpeechSynthesisUtterance(text);
-        msg.lang = 'hi-IN';
-        msg.rate = 0.94;
-        msg.pitch = 1.1;
-        if (maleVoice) msg.voice = maleVoice;
-
-        music.volume = 0.1;
-        music.play().catch(() => {});
-
-        window.speechSynthesis.cancel();
-        window.speechSynthesis.speak(msg);
-
-        msg.onend = function () {
-          if (typeof onComplete === "function") {
-            onComplete();
-          }
-        };
-      }
-    }
-
-    window.speechSynthesis.onvoiceschanged = () => {};
-  </script></body>
+</body>
 </html>
