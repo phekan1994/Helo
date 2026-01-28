@@ -4,43 +4,40 @@
 <meta charset="UTF-8">
 <title>24x7 YouTube Playlist Player</title>
 <meta name="viewport" content="width=device-width, initial-scale=1">
+
 <style>
-body {
+body{
   margin:0;
-  font-family: Arial, sans-serif;
   background:#000;
   color:#fff;
+  font-family:Arial, sans-serif;
 }
-header {
+header{
   background:#111;
   padding:10px;
   text-align:center;
   font-size:20px;
 }
-.container {
-  padding:10px;
-}
+.container{padding:10px}
 
-/* Controls */
-.controls {
+.controls{
   display:flex;
   gap:10px;
   flex-wrap:wrap;
   margin-bottom:10px;
 }
-.controls input {
+.controls input{
   flex:1;
   padding:8px;
   font-size:16px;
 }
-.controls button {
+.controls button{
   padding:8px 12px;
   font-size:16px;
   cursor:pointer;
 }
 
-/* Player */
-#playerBox {
+#playerBox{
   width:100%;
   height:320px;
   background:#000;
@@ -48,42 +45,45 @@ header {
 }
 
 /* Playlist */
-#playlist {
+#playlistBox{
+  margin-top:10px;
+}
+#playlist{
   display:grid;
   grid-template-columns:repeat(auto-fill,minmax(150px,1fr));
   gap:10px;
   max-height:300px;
   overflow-y:auto;
 }
-
-.videoItem {
+.videoItem{
   background:#181818;
   border:1px solid #333;
   padding:5px;
   text-align:center;
 }
-.videoItem img {
+.videoItem img{
   width:100%;
   cursor:pointer;
 }
-.videoItem button {
-  margin-top:5px;
+.videoItem button{
   width:100%;
-  background:#b00000;
+  margin-top:5px;
+  background:#c00000;
   color:#fff;
   border:none;
   padding:5px;
   cursor:pointer;
 }
-.videoItem button:hover {
-  background:#ff0000;
+.videoItem button:hover{
+  background:red;
 }
 
-.hide {
+.hide{
   display:none !important;
 }
 </style>
 </head>
+
 <body>
 
 <header>📺 24x7 YouTube Playlist Player</header>
@@ -94,48 +94,69 @@ header {
     <input id="url" placeholder="YouTube video link paste करें">
     <button onclick="addVideo()">Add Video</button>
     <button onclick="playAll()">▶ Play All</button>
-    <button onclick="togglePlaylist()">Hide / Show Playlist</button>
+    <button id="toggleBtn" onclick="togglePlaylist()">Hide Playlist</button>
   </div>
 
   <div id="playerBox">
     <div id="player"></div>
   </div>
 
-  <div id="playlist"></div>
+  <div id="playlistBox">
+    <div id="playlist"></div>
+  </div>
 
 </div>
 
 <script src="https://www.youtube.com/iframe_api"></script>
+
 <script>
 let videos = [];
 let current = 0;
 let player;
 
-// Extract YouTube ID
+/* ===== PAGE LOAD PAR PLAYLIST LOAD ===== */
+window.onload = function(){
+  const saved = localStorage.getItem("yt_playlist");
+  if(saved){
+    videos = JSON.parse(saved);
+    renderPlaylist();
+  }
+};
+
+/* ===== SAVE PLAYLIST ===== */
+function savePlaylist(){
+  localStorage.setItem("yt_playlist", JSON.stringify(videos));
+}
+
+/* ===== YOUTUBE ID NIKALNA ===== */
 function getID(url){
   const r = /(?:youtube\.com\/(?:watch\?v=|shorts\/|embed\/)|youtu\.be\/)([a-zA-Z0-9_-]{11})/;
   const m = url.match(r);
   return m ? m[1] : null;
 }
 
-// Add video
+/* ===== VIDEO ADD ===== */
 function addVideo(){
-  const input = document.getElementById('url');
+  const input = document.getElementById("url");
   const id = getID(input.value);
-  if(!id){ alert("Invalid YouTube URL"); return; }
+  if(!id){
+    alert("गलत YouTube लिंक");
+    return;
+  }
   videos.push(id);
-  input.value='';
+  savePlaylist();
+  input.value="";
   renderPlaylist();
 }
 
-// Render playlist with delete
+/* ===== PLAYLIST RENDER ===== */
 function renderPlaylist(){
-  const p = document.getElementById('playlist');
-  p.innerHTML='';
+  const p = document.getElementById("playlist");
+  p.innerHTML="";
   videos.forEach((id,i)=>{
-    const div = document.createElement('div');
-    div.className='videoItem';
-    div.innerHTML = `
+    const div = document.createElement("div");
+    div.className="videoItem";
+    div.innerHTML=`
       <img src="https://img.youtube.com/vi/${id}/mqdefault.jpg" onclick="playVideo(${i})">
       <div>Video ${i+1}</div>
       <button onclick="deleteVideo(${i})">❌ Delete</button>
@@ -144,60 +165,70 @@ function renderPlaylist(){
   });
 }
 
-// Play video
+/* ===== SINGLE VIDEO PLAY ===== */
 function playVideo(i){
   current=i;
   if(player) player.loadVideoById(videos[current]);
 }
 
-// Delete video
+/* ===== VIDEO DELETE ===== */
 function deleteVideo(i){
   videos.splice(i,1);
+  savePlaylist();
 
   if(i === current){
     if(videos.length === 0){
       player.stopVideo();
-    } else {
+    }else{
       current = i >= videos.length ? 0 : i;
       player.loadVideoById(videos[current]);
     }
-  } else if(i < current){
+  }else if(i < current){
     current--;
   }
-
   renderPlaylist();
 }
 
-// Play all
+/* ===== PLAY ALL ===== */
 function playAll(){
   if(videos.length===0) return;
   current=0;
   player.loadVideoById(videos[0]);
 }
 
-// YouTube API
+/* ===== YOUTUBE PLAYER READY ===== */
 function onYouTubeIframeAPIReady(){
-  player = new YT.Player('player',{
-    height:'100%',
-    width:'100%',
-    playerVars:{ autoplay:0, controls:1, rel:0 },
-    events:{ onStateChange:onStateChange }
+  player = new YT.Player("player",{
+    height:"100%",
+    width:"100%",
+    playerVars:{autoplay:0,controls:1,rel:0},
+    events:{onStateChange:onStateChange}
   });
 }
 
-// Auto next (24x7 loop)
+/* ===== AUTO NEXT (24x7 LOOP) ===== */
 function onStateChange(e){
   if(e.data === YT.PlayerState.ENDED){
     current++;
-    if(current >= videos.length) current = 0;
+    if(current >= videos.length) current=0;
     player.loadVideoById(videos[current]);
   }
 }
 
-// Toggle playlist
+/* ===== PLAYLIST SHOW / HIDE ===== */
 function togglePlaylist(){
-  document.getElementById('playlist').classList.toggle('hide');
+  const box = document.getElementById("playlistBox");
+  const btn = document.getElementById("toggleBtn");
+
+  box.classList.toggle("hide");
+
+  if(box.classList.contains("hide")){
+    btn.innerText = "Show Playlist";
+  }else{
+    btn.innerText = "Hide Playlist";
+  }
 }
 </script>
+
 </body>
 </html>
