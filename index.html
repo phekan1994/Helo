@@ -46,21 +46,8 @@ header {
   background:#000;
   margin-bottom:10px;
 }
-#player iframe {
-  width:100%;
-  height:100%;
-}
 
 /* Playlist */
-#playlistBox {
-  padding:10px;
-}
-#playlistHeader {
-  display:flex;
-  justify-content:space-between;
-  align-items:center;
-  margin-bottom:5px;
-}
 #playlist {
   display:grid;
   grid-template-columns:repeat(auto-fill,minmax(150px,1fr));
@@ -68,16 +55,30 @@ header {
   max-height:300px;
   overflow-y:auto;
 }
+
 .videoItem {
-  cursor:pointer;
-  text-align:center;
   background:#181818;
-  padding:5px;
   border:1px solid #333;
+  padding:5px;
+  text-align:center;
 }
 .videoItem img {
   width:100%;
+  cursor:pointer;
 }
+.videoItem button {
+  margin-top:5px;
+  width:100%;
+  background:#b00000;
+  color:#fff;
+  border:none;
+  padding:5px;
+  cursor:pointer;
+}
+.videoItem button:hover {
+  background:#ff0000;
+}
+
 .hide {
   display:none !important;
 }
@@ -89,7 +90,6 @@ header {
 
 <div class="container">
 
-  <!-- Controls -->
   <div class="controls">
     <input id="url" placeholder="YouTube video link paste करें">
     <button onclick="addVideo()">Add Video</button>
@@ -97,18 +97,11 @@ header {
     <button onclick="togglePlaylist()">Hide / Show Playlist</button>
   </div>
 
-  <!-- Video Player -->
   <div id="playerBox">
     <div id="player"></div>
   </div>
 
-  <!-- Playlist -->
-  <div id="playlistBox">
-    <div id="playlistHeader">
-      <h3>📂 Playlist</h3>
-    </div>
-    <div id="playlist"></div>
-  </div>
+  <div id="playlist"></div>
 
 </div>
 
@@ -118,84 +111,93 @@ let videos = [];
 let current = 0;
 let player;
 
-// YouTube ID Extractor
+// Extract YouTube ID
 function getID(url){
-  const reg = /(?:youtube\.com\/(?:watch\?v=|shorts\/|embed\/)|youtu\.be\/)([a-zA-Z0-9_-]{11})/;
-  const m = url.match(reg);
+  const r = /(?:youtube\.com\/(?:watch\?v=|shorts\/|embed\/)|youtu\.be\/)([a-zA-Z0-9_-]{11})/;
+  const m = url.match(r);
   return m ? m[1] : null;
 }
 
-// Add Video to Playlist
+// Add video
 function addVideo(){
   const input = document.getElementById('url');
   const id = getID(input.value);
-  if(!id){
-    alert("Invalid YouTube URL");
-    return;
-  }
+  if(!id){ alert("Invalid YouTube URL"); return; }
   videos.push(id);
   input.value='';
   renderPlaylist();
 }
 
-// Render Playlist Thumbnails
+// Render playlist with delete
 function renderPlaylist(){
-  const container = document.getElementById('playlist');
-  container.innerHTML='';
+  const p = document.getElementById('playlist');
+  p.innerHTML='';
   videos.forEach((id,i)=>{
     const div = document.createElement('div');
     div.className='videoItem';
-    div.innerHTML=`<img src="https://img.youtube.com/vi/${id}/mqdefault.jpg"><div>Video ${i+1}</div>`;
-    div.onclick=()=>{playVideo(i)};
-    container.appendChild(div);
+    div.innerHTML = `
+      <img src="https://img.youtube.com/vi/${id}/mqdefault.jpg" onclick="playVideo(${i})">
+      <div>Video ${i+1}</div>
+      <button onclick="deleteVideo(${i})">❌ Delete</button>
+    `;
+    p.appendChild(div);
   });
 }
 
-// Play Single Video
-function playVideo(index){
-  current=index;
+// Play video
+function playVideo(i){
+  current=i;
   if(player) player.loadVideoById(videos[current]);
 }
 
-// Play All Playlist
+// Delete video
+function deleteVideo(i){
+  videos.splice(i,1);
+
+  if(i === current){
+    if(videos.length === 0){
+      player.stopVideo();
+    } else {
+      current = i >= videos.length ? 0 : i;
+      player.loadVideoById(videos[current]);
+    }
+  } else if(i < current){
+    current--;
+  }
+
+  renderPlaylist();
+}
+
+// Play all
 function playAll(){
   if(videos.length===0) return;
   current=0;
-  player.loadVideoById(videos[current]);
+  player.loadVideoById(videos[0]);
 }
 
-// YouTube API Ready
+// YouTube API
 function onYouTubeIframeAPIReady(){
   player = new YT.Player('player',{
     height:'100%',
     width:'100%',
-    playerVars:{
-      autoplay:0,       // Desktop: user must click Play All
-      controls:1,
-      rel:0,
-      modestbranding:1
-    },
-    events:{
-      onStateChange:onPlayerStateChange
-    }
+    playerVars:{ autoplay:0, controls:1, rel:0 },
+    events:{ onStateChange:onStateChange }
   });
 }
 
-// Auto Next Video
-function onPlayerStateChange(e){
+// Auto next (24x7 loop)
+function onStateChange(e){
   if(e.data === YT.PlayerState.ENDED){
     current++;
-    if(current>=videos.length) current=0; // loop 24x7
+    if(current >= videos.length) current = 0;
     player.loadVideoById(videos[current]);
   }
 }
 
-// Hide / Show Playlist
+// Toggle playlist
 function togglePlaylist(){
-  const playlist = document.getElementById('playlist');
-  playlist.classList.toggle('hide');
+  document.getElementById('playlist').classList.toggle('hide');
 }
 </script>
-
 </body>
 </html>
